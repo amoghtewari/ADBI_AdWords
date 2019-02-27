@@ -7,6 +7,10 @@ from collections import defaultdict
 # setting seed
 random.seed(0)
 
+
+def psi(x):
+    return 1 - np.exp(x - 1)
+
 def BidScaler(bid, rembudget, budget):
     xu = (budget - rembudget) / budget
     return bid * psi(xu)
@@ -49,119 +53,159 @@ if __name__ == "__main__":
             queries = f.readlines()
         queries = [x.strip() for x in queries]
 
-        def check_budget(b):
+        def check_budget(b, budgetx):
             keys = []
             for key in b.keys():
                 keys.append(key)
 
             for advtsr in keys:
-                if budget[advtsr] >= b[advtsr]:
+                if budgetx[advtsr] >= b[advtsr]:
                     return 0
             return -1
 
-        def psi(x):
-            return 1 - np.exp(x - 1)
+
 
 
     if sys.argv[1] == 'greedy':
 
-        revenue = 0.0
-        budget=dict(budget1)
-        def greedyBidder(b,q):
-            keys = []
-            for key in b[q].keys():
-                keys.append(key)
-            maxBidder = keys[0]
-            maxBid = 0
-            c = check_budget(b[q])
-            if c == -1:
-                return -1
-            for k in keys:
-                if budget[k] >= b[q][k]:
-                    if maxBid < b[q][k]:
-                        maxBidder = k
-                        maxBid = b[q][k]
-                    elif maxBid == b[q][k]:
-                        if maxBidder > k:
+        def Greedy(Qs):
+            revenue = 0.0
+            budget=dict(budget1)
+            def greedyBidder(b,q):
+                keys = []
+                for key in b[q].keys():
+                    keys.append(key)
+                maxBidder = keys[0]
+                maxBid = 0
+                c = check_budget(b[q], budget)
+                if c == -1:
+                    return -1
+                for k in keys:
+                    if budget[k] >= b[q][k]:
+                        if maxBid < b[q][k]:
                             maxBidder = k
                             maxBid = b[q][k]
-            return maxBidder
+                        elif maxBid == b[q][k]:
+                            if maxBidder > k:
+                                maxBidder = k
+                                maxBid = b[q][k]
+                return maxBidder
 
-        for q in queries:
-            possibleBidder = greedyBidder(bids,q)
-            if possibleBidder != -1:
-                revenue = revenue + bids[q][possibleBidder]
-                budget[possibleBidder]=budget[possibleBidder] - bids[q][possibleBidder]
+            for q in Qs:
+                possibleBidder = greedyBidder(bids,q)
+                if possibleBidder != -1:
+                    revenue = revenue + bids[q][possibleBidder]
+                    budget[possibleBidder]=budget[possibleBidder] - bids[q][possibleBidder]
+
+            return revenue
+
+        total = 0.0
+        x = 100
+
+        for i in range(0,x):
+            queriesx=queries
+            random.shuffle(queriesx)
+            total = total + Greedy(queriesx)
+
+        revenue=total/x
 
         print(revenue)
-        print(revenue/sum(budget1.values()))
+        print(str(round(revenue / sum(budget1.values()), 2)))
+
 
 
     elif sys.argv[1] == 'balance':
+        def Balance(Qs):
+            revenue = 0.0
+            budget = dict(budget1)
 
-        revenue = 0.0
-        budget = dict(budget1)
-        def balanceBidder(b,q):
-            keys = []
-            for key in b[q].keys():
-                keys.append(key)
-            maxBidder = keys[0]
-            c = check_budget(b[q])
-            if c == -1:
-                return -1
-            for k in keys:
-                if budget[k] >= b[q][k]:
-                    if budget[maxBidder] < budget[k]:
-                        maxBidder = k
-                    elif budget[maxBidder] == budget[k]:
-                        if maxBidder > k:
+            def balanceBidder(b, q):
+                keys = []
+                for key in b[q].keys():
+                    keys.append(key)
+                maxBidder = keys[0]
+                c = check_budget(b[q], budget)
+                if c == -1:
+                    return -1
+                for k in keys:
+                    if budget[k] >= b[q][k]:
+                        if budget[maxBidder] < budget[k]:
                             maxBidder = k
+                        elif budget[maxBidder] == budget[k]:
+                            if maxBidder > k:
+                                maxBidder = k
 
-            return maxBidder
-        for q in queries:
-            possibleBidder = balanceBidder(bids,q)
-            if possibleBidder != -1:
-                revenue = revenue + bids[q][possibleBidder]
-                budget[possibleBidder]=budget[possibleBidder] - bids[q][possibleBidder]
+                return maxBidder
+
+            for q in Qs:
+                possibleBidder = balanceBidder(bids,q)
+                if possibleBidder != -1:
+                    revenue = revenue + bids[q][possibleBidder]
+                    budget[possibleBidder]=budget[possibleBidder] - bids[q][possibleBidder]
+
+            return revenue
+
+
+        total = 0.0
+        x = 100
+
+        for i in range(0, x):
+            queriesx = queries
+            random.shuffle(queriesx)
+            total = total + Balance(queriesx)
+
+        revenue = total / x
 
         print(revenue)
-        print(revenue/sum(budget1.values()))
+        print(str(round(revenue / sum(budget1.values()), 2)))
 
 
     elif sys.argv[1] == 'msvv':
-        revenue = 0.0
-        budget = dict(budget1)
-        #budget2 = dict(budget1)
+        def Msvv(Qs):
+            revenue = 0.0
+            budget = dict(budget1)
+            #budget2 = dict(budget1)
 
-        def msvvBidder(b, q):
-            keys = []
-            for key in b[q].keys():
-                keys.append(key)
-            maxBidder = keys[0]
-            c = check_budget(b[q])
-            if c == -1:
-                return -1
-            for k in keys:
-                if budget1[k] >= b[q][k]:
-                    m1 = BidScaler(b[q][maxBidder], budget[maxBidder], budget1[maxBidder])
-                    m2 = BidScaler(b[q][k], budget[k], budget1[k])
-                    if m1 < m2:
-                        maxBidder = k
-                    elif m1 == m2:
-                        if maxBidder > k:
+            def msvvBidder(b, q):
+                keys = []
+                for key in b[q].keys():
+                    keys.append(key)
+                maxBidder = keys[0]
+                c = check_budget(b[q], budget)
+                if c == -1:
+                    return -1
+                for k in keys:
+                    if budget1[k] >= b[q][k]:
+                        m1 = BidScaler(b[q][maxBidder], budget[maxBidder], budget1[maxBidder])
+                        m2 = BidScaler(b[q][k], budget[k], budget1[k])
+                        if m1 < m2:
                             maxBidder = k
+                        elif m1 == m2:
+                            if maxBidder > k:
+                                maxBidder = k
 
-            return maxBidder
+                return maxBidder
 
-        for q in queries:
-            possibleBidder = msvvBidder(bids,q)
-            if possibleBidder != -1:
-                revenue = revenue + bids[q][possibleBidder]
-                budget[possibleBidder]=budget[possibleBidder] - bids[q][possibleBidder]
+            for q in Qs:
+                possibleBidder = msvvBidder(bids,q)
+                if possibleBidder != -1:
+                    revenue = revenue + bids[q][possibleBidder]
+                    budget[possibleBidder]=budget[possibleBidder] - bids[q][possibleBidder]
+            return revenue
+
+        total=0.0
+        x=100
+
+        for i in range(0, x):
+            queriesx = queries
+            random.shuffle(queriesx)
+            total = total + Msvv(queriesx)
+
+        revenue = total / x
 
         print(revenue)
-        print(revenue / sum(budget1.values()))
+        print(str(round(revenue / sum(budget1.values()), 2)))
 
     else:
-        print('Invalid Input')
+        print('Please supply with greedy, balance or msvv')
          
